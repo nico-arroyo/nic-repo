@@ -3,13 +3,14 @@ package nico;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Locale;
 
 public class PlayerVerticle extends AbstractVerticle {
     private List<Player> players = new ArrayList<>();
@@ -40,23 +41,23 @@ public class PlayerVerticle extends AbstractVerticle {
 
     private void handleFindByStatus(RoutingContext context) {
         String status = context.request().getParam("status");
-        List<Player> filteredPlayers = players.stream()
+        List<JsonObject> filteredPlayers = players.stream()
                 .filter(player -> player.getStatus().toString().equalsIgnoreCase(status))
+                .map(Player::toJson)
                 .toList();
 
-        String jsonResult = filteredPlayers.stream()
-                .map(player -> String.format("{\"name\":\"%s\", \"lastName\":\"%s\"}", player.getName(), player.getLastName()))
-                .collect(Collectors.joining(",", "[", "]"));
+        JsonArray jsonResult = new JsonArray(filteredPlayers);
 
         context.response()
                 .putHeader("content-type", "application/json")
-                .end(jsonResult);
+                .end(jsonResult.encodePrettily());
     }
 
     private void handleFindByName(RoutingContext context) {
         String name = context.pathParam("playerName");
-        List<Player> filteredPlayers = players.stream()
+        List<JsonObject> filteredPlayers = players.stream()
                 .filter(player -> player.getName().equalsIgnoreCase(name))
+                .map(Player::toJson)
                 .toList();
 
         if (filteredPlayers.isEmpty()) {
@@ -64,11 +65,10 @@ public class PlayerVerticle extends AbstractVerticle {
                     .setStatusCode(404)
                     .end(String.format("{'result':'Player with name %s not found'}", name));
         } else {
-            Player player = filteredPlayers.get(0);
-            String jsonResult = String.format("{'result':'Player found: %s %s'}", player.getName(), player.getLastName());
+            JsonArray jsonResult = new JsonArray(filteredPlayers);
             context.response()
                     .putHeader("content-type", "application/json")
-                    .end(jsonResult);
+                    .end(jsonResult.encodePrettily());
         }
     }
 }
