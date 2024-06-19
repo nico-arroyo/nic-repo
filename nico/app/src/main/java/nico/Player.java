@@ -1,6 +1,9 @@
 package nico;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
 import java.util.ArrayList;
-import java.util.Locale;
 
 public class Player {
     private String name;
@@ -23,19 +26,24 @@ public class Player {
 
     public String getName() { return name; }
     public String getLastName() { return lastName; }
-    public Position getPosition() {
-        return position;
-    }
-    public ArrayList<String> getTeams() {
-        return teams;
-    }
+    public Position getPosition() { return position; }
+    public ArrayList<String> getTeams() { return teams; }
     //public Locale getNationality() { return nationality; }
-    public PreferredLeg getPreferredLeg() {
-        return preferredLeg;
-    }
+    public PreferredLeg getPreferredLeg() { return preferredLeg; }
     public Status getStatus() { return status; }
 
     public String toString() {
-        return "{}";
+        return String.format("{name: %s, lastName: %s, position: %s, teams: %s, preferredLeg: %s, status: %s}",
+                getName(), getLastName(), getPosition(), getTeams(), getPreferredLeg(), getStatus());
+    }
+
+    public JsonObject toJson() {
+        return new JsonObject()
+                .put("name", name)
+                .put("lastName", lastName)
+                .put("position", position)
+                .put("clubs", new JsonArray(teams))
+                .put("preferredLeg", preferredLeg)
+                .put("status", status);
     }
 }
