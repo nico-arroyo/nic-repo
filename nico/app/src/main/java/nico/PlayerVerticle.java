@@ -2,15 +2,15 @@ package nico;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
-import io.vertx.ext.web.Router;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class PlayerVerticle extends AbstractVerticle {
     private List<Player> players = new ArrayList<>();
@@ -22,11 +22,13 @@ public class PlayerVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
-        // Sample data for testing
-        players.add(new Player("Isco", "Alarcon", Position.CENTER_MIDFIELD, new ArrayList<>(Arrays.asList("Málaga", "Real Madrid", "Sevilla", "Betis")), PreferredLeg.AMBIDEXTROUS, Status.ACTIVE));
+        players.add(new Player("Isco", "Alarcon", Position.CENTER_MIDFIELD, "Betis", new ArrayList<>(Arrays.asList("Malaga", "Real Madrid", "Sevilla")), PreferredLeg.AMBIDEXTROUS, Status.ACTIVE));
+
         Router router = Router.router(vertx);
-        router.get("/player/findByStatus").handler(this::handleFindByStatus);
-        router.get("/player/:playerName").handler(this::handleFindByName);
+        router.route().handler(BodyHandler.create());
+
+        router.get("/player/:filter").handler(this::handleFindPlayer);
+        router.get("/player/:filter/:value").handler(this::handleFindPlayer);
 
         vertx.createHttpServer()
                 .requestHandler(router)
@@ -39,31 +41,45 @@ public class PlayerVerticle extends AbstractVerticle {
                 });
     }
 
-    private void handleFindByStatus(RoutingContext context) {
-        String status = context.request().getParam("status");
+    private void handleFindPlayer(RoutingContext context) {
+        String filter = context.pathParam("filter");
+        String value = context.pathParam("value");
+
+        if (value == null || value.isEmpty()) {
+            context.response()
+                    .setStatusCode(400)
+                    .end(String.format("{'error':'Value for filter %s is required'}", filter));
+            return;
+        }
+
         List<JsonObject> filteredPlayers = players.stream()
-                .filter(player -> player.getStatus().toString().equalsIgnoreCase(status))
-                .map(Player::toJson)
-                .toList();
-
-        JsonArray jsonResult = new JsonArray(filteredPlayers);
-
-        context.response()
-                .putHeader("content-type", "application/json")
-                .end(jsonResult.encodePrettily());
-    }
-
-    private void handleFindByName(RoutingContext context) {
-        String name = context.pathParam("playerName");
-        List<JsonObject> filteredPlayers = players.stream()
-                .filter(player -> player.getName().equalsIgnoreCase(name))
+                .filter(player -> {
+                    switch (filter.toLowerCase()) {
+                        case "name":
+                            return player.getName().equalsIgnoreCase(value);
+                        case "lastname":
+                            return player.getLastName().equalsIgnoreCase(value);
+                        case "position":
+                            return player.getPosition().toString().equalsIgnoreCase(value);
+                        case "currentteam":
+                            return player.getCurrentTeam().equalsIgnoreCase(value);
+                        case "formerteam":
+                            return player.getFormerTeams().stream().anyMatch(team -> team.equalsIgnoreCase(value));
+                        case "preferredleg":
+                            return player.getPreferredLeg().toString().equalsIgnoreCase(value);
+                        case "status":
+                            return player.getStatus().toString().equalsIgnoreCase(value);
+                        default:
+                            return false;
+                    }
+                })
                 .map(Player::toJson)
                 .toList();
 
         if (filteredPlayers.isEmpty()) {
             context.response()
                     .setStatusCode(404)
-                    .end(String.format("{'result':'Player with name %s not found'}", name));
+                    .end(String.format("{'result':'Player(s) with %s %s not found'}", filter, value));
         } else {
             JsonArray jsonResult = new JsonArray(filteredPlayers);
             context.response()
