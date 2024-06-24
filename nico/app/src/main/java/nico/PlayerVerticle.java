@@ -18,7 +18,6 @@ public class PlayerVerticle extends AbstractVerticle {
     private JDBCClient jdbcClient;
     private List<Player> players = new ArrayList<>();
 
-
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new PlayerVerticle());
@@ -85,18 +84,18 @@ public class PlayerVerticle extends AbstractVerticle {
 
         String name = json.getString("name");
         String lastName = json.getString("lastName");
-        String position = json.getString("position");
+        Position position = Position.valueOf(json.getString("position"));
         String currentTeam = json.getString("currentTeam");
-        JsonArray formerTeamsJson = json.getJsonArray("formerTeams");
-        String formerTeams = formerTeamsJson.encode();
-        String preferredLeg = json.getString("preferredLeg");
-        String status = json.getString("status");
+        String formerTeams = json.getJsonArray("formerTeams").encode();
+        PreferredLeg preferredLeg = PreferredLeg.valueOf(json.getString("preferredLeg"));
+        Status status = Status.valueOf(json.getString("status"));
 
         jdbcClient.getConnection(ar -> {
             if (ar.succeeded()) {
                 SQLConnection connection = ar.result();
                 String sql = "INSERT INTO player (name, lastName, position, currentTeam, formerTeams, preferredLeg, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
-                connection.updateWithParams(sql, new JsonArray().add(name).add(lastName).add(position).add(currentTeam).add(formerTeams).add(preferredLeg).add(status), res -> {
+                JsonArray params = new JsonArray().add(name).add(lastName).add(position).add(currentTeam).add(formerTeams).add(preferredLeg).add(status);
+                connection.updateWithParams(sql, params, res -> {
                     if (res.succeeded()) {
                         context.response()
                                 .setStatusCode(201)
