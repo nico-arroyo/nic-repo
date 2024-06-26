@@ -1,0 +1,213 @@
+openapi: "2.0.0"
+info:
+  title: "Football API"
+  description: "API for managing football teams and players."
+  version: "1.0.0"
+host: "localhost:8080"
+schemes:
+  - "http"
+
+paths:
+  /players:
+    get:
+      summary: "Get list of players"
+      description: "Returns a list of players based on query parameters"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "name"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "lastName"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "position"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "nationality"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "preferredLeg"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "status"
+          in: "query"
+          type: "string"
+          required: false
+
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            type: "array"
+            $ref: "#/definitions/Player"
+        500:
+          description: "Unexpected error"
+    post:
+      summary: "Add a new player"
+      description: "Create a new player in the database"
+      operationId: "addPlayer"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Player object that needs to be added"
+          required: true
+          schema:
+            $ref: "#/definitions/Player"
+      responses:
+        201:
+          description: "Player created"
+        500:
+          description: "Unexpected error"
+  /players/{id}:
+    get:
+      summary: "Find player by ID"
+      description: "Returns a single player"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            $ref: "#/definitions/Player"
+        404:
+          description: "Player not found"
+        500:
+          description: "Unexpected error"
+  /teams:
+    get:
+      summary: "Get list of teams"
+      description: "Retrieve a list of teams based on query parameters"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "name"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "city"
+          in: "query"
+          type: "string"
+          required: false
+        - name: "country"
+          in: "query"
+          type: "string"
+          required: false
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Team"
+        500:
+          description: "Internal server error"
+    post:
+      summary: "Add a new team"
+      description: "Create a new team in the database"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Team object that needs to be added"
+          required: true
+          schema:
+            $ref: "#/definitions/Team"
+      responses:
+        201:
+          description: "Team created"
+        500:
+          description: "Internal server error"
+    /teams/{id}:
+      get:
+        summary: "Find team by ID"
+        description: "Returns a single team"
+        produces:
+          - "application/json"
+        parameters:
+          - name: "id"
+            in: "path"
+            required: true
+            type: "string"
+        responses:
+          200:
+            description: "Successful operation"
+            schema:
+              $ref: "#/definitions/Team"
+          404:
+            description: "Team not found"
+          500:
+            description: "Internal server error"
+definitions:
+  Player:
+    type: "object"
+    required:
+      - "id"
+      - "name"
+      - "lastName"
+    properties:
+      id:
+        type: "string"
+        example: "12345"
+      name:
+        type: "string"
+        example: "John"
+      lastName:
+        type: "string"
+        example: "Doe"
+      position:
+        type: "string"
+        example: "Forward"
+      nationality:
+        type: "string"
+        example: "American"
+      preferredLeg:
+        type: "string"
+        example: "Right"
+      status:
+        type: "string"
+        example: "Active"
+  Team:
+    type: "object"
+    required:
+      - "id"
+      - "name"
+    properties:
+      id:
+        type: "string"
+        example: "12345"
+      name:
+        type: "string"
+        example: "FC Barcelona"
+      city:
+        type: "string"
+        example: "Barcelona"
+      country:
+        type: "string"
+        example: "Spain"
+      stadium:
+        type: "string"
+        example: "Camp Nou"
+      founded:
+        type: "integer"
+        example: 1899
+      coach:
+        type: "string"
+        example: "Xavi Hernandez"
