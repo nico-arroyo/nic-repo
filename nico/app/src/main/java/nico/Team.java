@@ -1,6 +1,9 @@
 package nico;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+
+import java.util.List;
 import java.util.UUID;
 
 public class Team {
@@ -11,6 +14,7 @@ public class Team {
     private final String country;
     private final String stadium;
     private final int founded;
+    private final List<UUID> players;
 
     private Team(Builder builder) {
         id = builder.id;
@@ -19,6 +23,7 @@ public class Team {
         country = builder.country;
         stadium = builder.stadium;
         founded = builder.founded;
+        players = builder.players;
     }
 
     public static Team create(JsonObject data) {
@@ -29,6 +34,7 @@ public class Team {
                 .withCountry(data.getString("country"))
                 .withStadium(data.getString("stadium"))
                 .withFounded(data.getInteger("founded"))
+                .withPlayers(data.getJsonArray("players").getList())
                 .build();
     }
 
@@ -39,7 +45,8 @@ public class Team {
                 .put("city", city)
                 .put("country", country)
                 .put("stadium", stadium)
-                .put("founded", founded);
+                .put("founded", founded)
+                .put("clubs", new JsonArray(players));
     }
 
     public static final class Builder {
@@ -49,6 +56,7 @@ public class Team {
         private String country;
         private String stadium;
         private int founded;
+        private List<UUID> players;
 
         private Builder() {}
 
@@ -86,6 +94,10 @@ public class Team {
             return this;
         }
 
+        public Team.Builder withPlayers(List<UUID> players) {
+            this.players = players;
+            return this;
+        }
         public Team build() {
             return new Team(this);
         }
