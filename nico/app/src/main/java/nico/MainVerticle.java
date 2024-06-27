@@ -33,13 +33,14 @@ public class MainVerticle extends AbstractVerticle {
         router.get("/players/:id").handler(this::handleFindPlayer);
         router.get("/players").handler(this::handleFindPlayers);
         router.post("/players").handler(this::handleAddPlayer);
-        router.put("/players/:id").handler(this::handlePutPlayer);
+        router.put("/players/:playerId").handler(this::handlePutPlayer);
         //router.delete("players/:id").handler(this::handleDeletePlayer);
         
         router.get("/teams/:id").handler(this::handleFindTeam);
         router.get("/teams").handler(this::handleFindTeams);
         router.post("/teams").handler(this::handleAddTeam);
-        router.delete("teams/:id").handler(this::handleDeleteTeam);
+        router.put("/teams/:teamId").handler(this::handlePutTeam);
+        //router.delete("teams/:id").handler(this::handleDeleteTeam);
 
 
         vertx
@@ -100,7 +101,7 @@ public class MainVerticle extends AbstractVerticle {
                                     .setStatusCode(500)
                                     .end(new JsonObject().put("error", error.getMessage()).encodePrettily());
                         });
-}
+    }
 
     private void handleAddPlayer(RoutingContext routingContext) {
         var body = routingContext.body().asJsonObject();
@@ -118,13 +119,45 @@ public class MainVerticle extends AbstractVerticle {
                         },
                         () -> System.out.println("Empty"));
     }
-    
-    private void handlePutPlayer(RoutingContext routingContext) {
 
+    private void handlePutPlayer(RoutingContext routingContext) {
+        var playerId = routingContext.pathParam("playerId");
+        var updatedPlayerJson = routingContext.getBodyAsJson();
+
+        client.findOne("players", new JsonObject().put("id", playerId), null)
+                .subscribe(player -> {
+                    if (player != null) {
+                        player.mergeIn(updatedPlayerJson);
+
+                        client.replaceDocuments("players", new JsonObject().put("id", playerId), player)
+                                .subscribe(
+                                        res -> {
+                                            routingContext.response()
+                                                    .setStatusCode(200)
+                                                    .putHeader("Content-type", "application/json")
+                                                    .end(new JsonObject().put("message", "Player updated successfully").encodePrettily());
+                                        },
+                                        error -> {
+                                            error.printStackTrace();
+                                            routingContext.response()
+                                                    .setStatusCode(500)
+                                                    .end(new JsonObject().put("error", error.getMessage()).encodePrettily());
+                                        }
+                                );
+                    } else {
+                        routingContext.response()
+                                .setStatusCode(404)
+                                .end(new JsonObject().put("error", "Player not found").encodePrettily());
+                    }
+                }, error -> {
+                    error.printStackTrace();
+                    routingContext.response()
+                            .setStatusCode(500)
+                            .end(new JsonObject().put("error", error.getMessage()).encodePrettily());
+                });
     }
 
 
-    /*
     private void handleDeletePlayer(RoutingContext routingContext) {
         var id = routingContext.pathParam("id");
 
@@ -140,9 +173,6 @@ public class MainVerticle extends AbstractVerticle {
                         }
                 );
     }
-
-     */
-
     
     private void handleFindTeam(RoutingContext routingContext) {
         var id = routingContext.pathParam("id");
@@ -211,6 +241,44 @@ public class MainVerticle extends AbstractVerticle {
                         },
                         () -> System.out.println("Empty"));
     }
+
+    private void handlePutTeam(RoutingContext routingContext) {
+        var teamId = routingContext.pathParam("teamId");
+        var updatedTeamJson = routingContext.getBodyAsJson();
+
+        client.findOne("teams", new JsonObject().put("id", teamId), null)
+                .subscribe(team -> {
+                    if (team != null) {
+                        team.mergeIn(updatedTeamJson);
+
+                        client.replaceDocuments("teams", new JsonObject().put("id", teamId), team)
+                                .subscribe(
+                                        res -> {
+                                            routingContext.response()
+                                                    .setStatusCode(200)
+                                                    .putHeader("Content-type", "application/json")
+                                                    .end(new JsonObject().put("message", "Team updated successfully").encodePrettily());
+                                        },
+                                        error -> {
+                                            error.printStackTrace();
+                                            routingContext.response()
+                                                    .setStatusCode(500)
+                                                    .end(new JsonObject().put("error", error.getMessage()).encodePrettily());
+                                        }
+                                );
+                    } else {
+                        routingContext.response()
+                                .setStatusCode(404)
+                                .end(new JsonObject().put("error", "Team not found").encodePrettily());
+                    }
+                }, error -> {
+                    error.printStackTrace();
+                    routingContext.response()
+                            .setStatusCode(500)
+                            .end(new JsonObject().put("error", error.getMessage()).encodePrettily());
+                });
+    }
+
 
     private void handleDeleteTeam(RoutingContext routingContext) {
         var id = routingContext.pathParam("id");
